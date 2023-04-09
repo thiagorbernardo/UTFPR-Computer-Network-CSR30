@@ -2,12 +2,18 @@
 import socket
 import os
 import threading
+import base64
 
 HTML_FOLDER = os.path.dirname(os.path.realpath(__file__)) + '/html'
 SERVER_HOST = '0.0.0.0' # Todas as interfaces de rede
 SERVER_PORT = 6789
 MAX_CONNECTIONS = 10
 PAYLOAD_SIZE = 1024
+
+def get_html(filename):
+    """Return the contents of a file as a string."""
+    with open(filename, 'rb') as f:
+        return f.read()
 
 class MultiThreadWebServer(object):
     def __init__(self, host, port):
@@ -23,11 +29,6 @@ class MultiThreadWebServer(object):
             1,
         )
         self.server.bind((host, port))
-
-    def get_file(filename):
-        """Return the contents of a file as a string."""
-        with open(filename, 'r') as f:
-            return f.read()
 
     def listen(self):
         self.server.listen(MAX_CONNECTIONS)
@@ -45,6 +46,12 @@ class MultiThreadWebServer(object):
                     parts = request.split()
                     method = parts[0]
                     path = parts[1]
+                    if(path.endswith('.png')):
+                        content_type = 'image/png'
+                    if(path.endswith('.jpeg') or path.endswith('.jpg')):
+                        content_type = 'image/jpeg'
+                    else:
+                        content_type = 'text/html'
 
                     if(method != 'GET'):
                         response = 'HTTP/1.0 405 Method Not Allowed'
@@ -56,17 +63,19 @@ class MultiThreadWebServer(object):
 
                     filename = os.path.join(HTML_FOLDER, path.lstrip('/'))
                     if os.path.isfile(filename):
-                        content = self.get_file(filename)
-                        response = 'HTTP/1.0 200 OK\n\n' + content
+                        content = get_html(filename)
+                        response = f'HTTP/1.0 200 OK\nContent-Type: {content_type}\n\n'.encode() + content
                     else:
-                        content = self.get_file(os.path.join(HTML_FOLDER, '404.html'))
+                        content = get_html(os.path.join(HTML_FOLDER, '404.html'))
                         response = 'HTTP/1.0 404 Not Found\n\n' + content
+                        response = response.encode()
 
-                    client.sendall(response.encode())
+                    client.sendall(response)
                     client.close()
                 else:
                     raise 'Client disconnected'
-            except:
+            except Exception as e:
+                print(e)
                 client.close()
                 return False
 
