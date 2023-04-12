@@ -2,7 +2,6 @@
 import socket
 import os
 import threading
-import base64
 
 HTML_FOLDER = os.path.dirname(os.path.realpath(__file__)) + '/html'
 SERVER_HOST = '0.0.0.0' # Todas as interfaces de rede
@@ -48,10 +47,12 @@ class MultiThreadWebServer(object):
                     path = parts[1]
                     if(path.endswith('.png')):
                         content_type = 'image/png'
-                    if(path.endswith('.jpeg') or path.endswith('.jpg')):
+                    elif(path.endswith('.jpeg') or path.endswith('.jpg')):
                         content_type = 'image/jpeg'
                     else:
                         content_type = 'text/html'
+
+                    print(content_type)
 
                     if(method != 'GET'):
                         response = 'HTTP/1.0 405 Method Not Allowed'
@@ -67,8 +68,7 @@ class MultiThreadWebServer(object):
                         response = f'HTTP/1.0 200 OK\nContent-Type: {content_type}\n\n'.encode() + content
                     else:
                         content = get_html(os.path.join(HTML_FOLDER, '404.html'))
-                        response = 'HTTP/1.0 404 Not Found\n\n' + content
-                        response = response.encode()
+                        response = 'HTTP/1.0 404 Not Found\n\n'.encode() + content
 
                     client.sendall(response)
                     client.close()
